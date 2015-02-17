@@ -1,9 +1,10 @@
+// set initial values
 .5::second => dur quarternote;
-
 
 [60, 62, 64, 67, 67, 69, 69, 72, 76, 84] @=> int mynotes[];
 
 int dice;
+
 int melody1[8];
 for (0 => int i; i < melody1.size(); i++) {
     Math.random2(0, mynotes.size()-1) => dice;
@@ -16,34 +17,55 @@ for (0 => int i; i < melody2.size(); i++) {
     mynotes[dice] => melody2[i];
 }
 
+// play the song
 
+// play low part 
+spork ~ part1(12, 0);
+16 * quarternote => now;
 
-spork ~ part1(10, 0);
-8 * quarternote => now;
-spork ~ part2(2, 0);
-8 * quarternote => now;
-spork ~ part2(2, 4);
-8 * quarternote => now;
+// play melody
+spork ~ part2(8, 0);
+16 * quarternote => now;
 
-spork ~ part6();
-for (1 => int i; i < 5; i++) {
+// play chord
+spork ~ part3(60);
+spork ~ part3(62);
+spork ~ part3(64);
+spork ~ part3(67);
+16*quarternote => now;
+
+// white noise
+//spork ~ noise(); 
+
+// play modulation
+for (1 => int i; i < 6; i++) {
     spork ~ part2(1, i);
     spork ~ part1(1, i);
     quarternote -.01::second => quarternote;
     4*quarternote => now;
 }
-.6::second => quarternote;
-spork ~ part2(2, 0);
-//spork ~ part6();
-//8 * quarternote => now;
-//spork ~ part5();
-//spork ~ part4();
 
+// play high part slowly
+.6::second => quarternote;
+spork ~ part2(2,0);
+8*quarternote => now;
+
+// play drop
+.5::second => quarternote;
+spork ~ drop();
+
+7*quarternote*4 => now;
+spork ~ part1(2, 0);
+8*quarternote => now;
+
+// let time run in top level
 while(1)
 {
     quarternote => now;
 }
 
+// --------------------------------------------------------------------
+// low part
 fun void part1(int num, int off) {
     TriOsc part1 => ADSR a1 => NRev nr1 => dac;
     nr1.mix(.06);
@@ -60,6 +82,7 @@ fun void part1(int num, int off) {
     }
 }
 
+// melody
 fun void part2(int num, int off) {
     SinOsc part1 => ADSR a1 => NRev nr1 => dac;
     nr1.mix(.06);
@@ -76,88 +99,87 @@ fun void part2(int num, int off) {
     }
 }
 
-fun void part3() {
+// single note of chord
+fun void part3(int note) {
     SinOsc part1 => ADSR a1 => NRev nr1 => dac;
     nr1.mix(.06);
-    a1.set(300::ms, 300::ms, 0.5, 80::second);
+    a1.set(8*quarternote, 4*quarternote, 0.5, 0::second);
     nr1.gain(.2);
     
-    Std.mtof(64) => part1.freq;
+    Std.mtof(note) => part1.freq;
     a1.keyOn();
-    80::second => now;
-    
+    16*quarternote => now;
 }
 
-fun void part4() {
-    Noise n => JCRev r => HPF hp => ADSR e => dac;
-    SinOsc s => ADSR e2 => dac;
-    
-    s.freq(90);
-    e.set(4::ms,300::ms,0.0,200::ms);
-    e2.set(4::ms,300::ms,0.0,50::ms);
-    hp.freq(4000);
-    hp.Q(1.0);
-    
-    [.75, .75, .75, .75, 1] @=> float beats[]; 
-    
-    0 => int i;
-    
-    while(1)
-    {
-        for (0 => int i; i < beats.size(); i++) {
-            e2.keyOn();
-            e2.decayTime((Math.random2(100, 120))::ms);
-            hp.freq(Math.random2(9000, 9000));
-            quarternote => now;
-            
-        
-            i++;
-        }
-    }
-}
-
-fun void part5() {
-    Noise n => JCRev r => HPF hp => ADSR e => dac;
-    SinOsc s => ADSR e2 => dac;
-    
-    s.gain(.5);
-    
-    s.freq(90);
-    e2.set(4::ms,300::ms,0.0,20::ms);
-    hp.freq(4000);
-    hp.Q(1.0);
-    
-    [.75, .75, .75, .75, 1] @=> float beats[]; 
-    
-    0 => int i;
-    
-    while(1)
-    {
-        for (0 => int i; i < beats.size(); i++) {
-            e2.keyOn();
-            e.decayTime((Math.random2(80, 80))::ms);
-            hp.freq(Math.random2(400, 400));
-            beats[i] * quarternote => now;
-        }
-    }
-}
-
-fun void part6() {
-    Noise n =>  LPF hp  => dac;
-    //e.set(4::ms,8*quarternote,0, 0::second);
+// white noise
+// need to fix the duration of this
+fun void noise() {
+    Noise n => LPF hp => ADSR e  => dac;
+    e.set(2*quarternote, 0::second, 1, 0::second);
     hp.freq(1000);
     hp.Q(0.7);
     n.gain(.1);
     
-    0 => int i;
-    
-    
-    //e.keyOn();
-    //while (true) {
-        while(hp.freq() < 8000) {
-            hp.freq() + 10 => hp.freq;
-            500::samp => now;
-        }
-
-    //}
+    e.keyOn();
+    while(hp.freq() < 8000) {
+        hp.freq() + 10 => hp.freq;
+        500::samp => now;
+    }
 }
+
+// drop section
+fun void drop() {
+    SinOsc part => ADSR a => Chorus c => dac;
+    SawOsc part2 => ADSR a2 => Chorus c2 => dac;
+    
+    a.set(50::ms, 250::ms, 0.3, 200::ms);
+    a2.set(125::ms, 25::ms, 0.3, 100::ms);
+    
+    c.modFreq(64);
+    c.modDepth(.01);
+    c.mix(.5);
+    
+    int melody[8];
+    
+    for (0 => int i; i < melody.size(); i++) {
+        Math.random2(0, mynotes.size()-1) => dice;
+        mynotes[dice] => melody[i];
+    }
+    
+    for (0 => int t; t < 4 ; t++) {
+        Std.mtof(melody[0])*0.5 => part.freq;
+        a.keyOn();
+        quarternote => now;
+        a.keyOff();
+        Std.mtof(melody[1])*0.5 => part2.freq;
+        a2.keyOn();
+        quarternote*.5 => now;
+        a2.keyOff();
+        Std.mtof(melody[2])*0.5 => part.freq;
+        a.keyOn();
+        quarternote => now;
+        a.keyOff();
+        Std.mtof(melody[3])*0.5 => part.freq;
+        a.keyOn();
+        quarternote => now;
+        a.keyOff();
+        Std.mtof(melody[4])*0.5 => part.freq;
+        a.keyOn();
+        quarternote => now;
+        a.keyOff();
+        Std.mtof(melody[5])*0.5 => part2.freq;
+        a2.keyOn();
+        quarternote*.5 => now;
+        a2.keyOff();
+        Std.mtof(melody[6])*0.5 => part.freq;
+        a.keyOn();
+        quarternote => now;
+        a.keyOff();
+        Std.mtof(melody[7])*0.5 => part.freq;
+        a.keyOn();
+        quarternote => now;
+        a.keyOff();
+        
+    }
+}
+
