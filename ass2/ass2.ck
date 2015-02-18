@@ -21,7 +21,8 @@
 // Get the command line argument
 Std.atoi(me.arg(0)) => int base;
 
-// Build a set of pitches to be used offset from the base
+// Build a set of pitches to be used for random melodies, offset from 
+// the base pitch.
 [0, 2, 4, 7, 7, 9, 9, 12, 16, 14] @=> int mynotes[];
 for (0 => int i; i < mynotes.size(); i++) {
     mynotes[i] + base => mynotes[i];
@@ -100,7 +101,7 @@ fun void part2(int num, int off, float gain) {
 }
 
 // Same as part2(), but holds the final note for an extra measure.
-// Runs for num * melody2.size() * quarternote/4 + 4*quarternote seconds
+// Runs for num * melody2.size() * quarternote/4 + 4*quarternote seconds.
 fun void part2sus(int num, int off, float gain) {
     // Use a sine oscillator with an envelope and reverb
     SinOsc s => ADSR e => NRev nr => dac;
@@ -124,6 +125,7 @@ fun void part2sus(int num, int off, float gain) {
             }
         }
     } 
+    
     // sustain the last note for an extra measure
     e.set(300::ms, 400::ms, 0.0, 100::ms);
     4*quarternote => now;
