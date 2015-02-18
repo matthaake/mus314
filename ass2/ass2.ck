@@ -185,26 +185,27 @@ fun void noise(dur duration) {
     quarternote / 4 => now;
 }
 
-// Play the drop section of the seong.
-// Runs for
+// Play the drop section of the song num times.
+// Runs for 7 * quarternote seconds.
 fun void drop(int num) {
+    // There are two parts to the drop. A sine oscillator
+    // and a sawtooth oscillator with envelopes and chorus effects.
     SinOsc part => ADSR a => Chorus c => dac;
     SawOsc part2 => ADSR a2 => Chorus c2 => dac;
-    
     a.set(50::ms, 250::ms, 0.3, 200::ms);
     a2.set(125::ms, 25::ms, 0.3, 100::ms);
-    
     c.modFreq(64);
     c.modDepth(.01);
     c.mix(.5);
     
+    // Generate random melody.
     int melody[8];
-    
     for (0 => int i; i < melody.size(); i++) {
         Math.random2(0, mynotes.size()-1) => dice;
         mynotes[dice] => melody[i];
     }
     
+    // Play the melody num times split properly across both parts.
     for (0 => int t; t < num ; t++) {
         Std.mtof(melody[0])*0.5 => part.freq;
         a.keyOn();
@@ -239,6 +240,8 @@ fun void drop(int num) {
         quarternote => now;
         a.keyOff();
     }
+    
+    // eliminate final click
     quarternote => now;
 }
 
